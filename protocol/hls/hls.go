@@ -36,15 +36,15 @@ var crossdomainxml = []byte(`<?xml version="1.0" ?>
 
 type Server struct {
 	listener net.Listener
-	conns    *sync.Map
+	sources  *sync.Map
 }
 
 func NewServer() *Server {
-	ret := &Server{
-		conns: &sync.Map{},
+	server := &Server{
+		sources: &sync.Map{},
 	}
-	go ret.checkStop()
-	return ret
+	go server.checkStop()
+	return server
 }
 
 func (server *Server) Serve(listener net.Listener) error {
@@ -59,19 +59,19 @@ func (server *Server) Serve(listener net.Listener) error {
 
 func (server *Server) GetWriter(info av.Info) av.WriteCloser {
 	var s *Source
-	v, ok := server.conns.Load(info.Key)
+	v, ok := server.sources.Load(info.Key)
 	if !ok {
 		log.Debug("new hls source")
 		s = NewSource(info)
-		server.conns.Store(info.Key, s)
+		server.sources.Store(info.Key, s)
 	} else {
 		s = v.(*Source)
 	}
 	return s
 }
 
-func (server *Server) getConn(key string) *Source {
-	v, ok := server.conns.Load(key)
+func (server *Server) getSource(key string) *Source {
+	v, ok := server.sources.Load(key)
 	if !ok {
 		return nil
 	}
@@ -82,11 +82,11 @@ func (server *Server) checkStop() {
 	for {
 		<-time.After(5 * time.Second)
 
-		server.conns.Range(func(key, val interface{}) bool {
+		server.sources.Range(func(key, val interface{}) bool {
 			v := val.(*Source)
 			if !v.Alive() && !configure.Config.GetBool("hls_keep_after_end") {
 				log.Debug("check stop and remove: ", v.Info())
-				server.conns.Delete(key)
+				server.sources.Delete(key)
 			}
 			return true
 		})
@@ -102,12 +102,12 @@ func (server *Server) handle(w http.ResponseWriter, r *http.Request) {
 	switch path.Ext(r.URL.Path) {
 	case ".m3u8":
 		key, _ := server.parseM3u8(r.URL.Path)
-		conn := server.getConn(key)
-		if conn == nil {
+		source := server.getSource(key)
+		if source == nil {
 			http.Error(w, ErrNoPublisher.Error(), http.StatusForbidden)
 			return
 		}
-		tsCache := conn.GetCacheInc()
+		tsCache := source.GetCacheInc()
 		if tsCache == nil {
 			http.Error(w, ErrNoPublisher.Error(), http.StatusForbidden)
 			return
@@ -126,12 +126,12 @@ func (server *Server) handle(w http.ResponseWriter, r *http.Request) {
 		w.Write(body)
 	case ".ts":
 		key, _ := server.parseTs(r.URL.Path)
-		conn := server.getConn(key)
-		if conn == nil {
+		source := server.getSource(key)
+		if source == nil {
 			http.Error(w, ErrNoPublisher.Error(), http.StatusForbidden)
 			return
 		}
-		tsCache := conn.GetCacheInc()
+		tsCache := source.GetCacheInc()
 		item, err := tsCache.GetItem(r.URL.Path)
 		if err != nil {
 			log.Debug("GetItem error: ", err)

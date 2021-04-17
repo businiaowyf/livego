@@ -16,3 +16,5 @@ require (
 	github.com/stretchr/testify v1.4.0
 	github.com/urfave/negroni v1.0.0 // indirect
 )
+
+replace github.com/gwuhaolin/livego => github.com/businiaowyf/livego v0.0.0-20210227072528-c9752c78d6d6

@@ -157,6 +157,22 @@ func (s *Server) handleConn(conn *core.Conn) error {
 			flvWriter := new(flv.FlvDvr)
 			s.handler.HandleWriter(flvWriter.GetWriter(reader.Info()))
 		}
+
+		// Start rtmp relay
+		// It will call c.handler.HandleWriter(writer)
+		rtmpRelayAddrList := configure.Config.GetStringSlice("rtmp_relay_addr")
+		log.Infof("rtmp_relay_addr_list=%v", rtmpRelayAddrList)
+		for _, addr := range rtmpRelayAddrList {
+			rtmpRelayClient := NewRtmpClient(s.handler, nil)
+			url := "rtmp://" + string(addr) + "/" + appname + "/" + channel
+			go func(url string) {
+				if err := rtmpRelayClient.Dial(url, av.PUBLISH); err != nil {
+					log.Error("rtmpRelayClient.Dial error=%v, url=%v", err, url)
+					return
+				}
+				log.Infof("Start rtmp relay sucuess, url=%v", url)
+			}(url)
+		}
 	} else {
 		writer := NewVirWriter(connServer)
 		log.Debugf("new player: %+v", writer.Info())
@@ -200,7 +216,7 @@ type VirWriter struct {
 }
 
 func NewVirWriter(conn StreamReadWriteCloser) *VirWriter {
-	ret := &VirWriter{
+	writer := &VirWriter{
 		Uid:         uid.NewId(),
 		conn:        conn,
 		RWBaser:     av.NewRWBaser(time.Second * time.Duration(writeTimeout)),
@@ -208,14 +224,14 @@ func NewVirWriter(conn StreamReadWriteCloser) *VirWriter {
 		WriteBWInfo: StaticsBW{0, 0, 0, 0, 0, 0, 0, 0},
 	}
 
-	go ret.Check()
+	go writer.Check()
 	go func() {
-		err := ret.SendPacket()
+		err := writer.SendPacket()
 		if err != nil {
 			log.Warning(err)
 		}
 	}()
-	return ret
+	return writer
 }
 
 func (v *VirWriter) SaveStatics(streamid uint32, length uint64, isVideoFlag bool) {

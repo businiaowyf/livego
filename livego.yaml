@@ -7,7 +7,7 @@
 # httpflv_addr: ":7001"
 
 # # RTMP Options
-# rtmp_noauth: false
+rtmp_noauth: true
 # rtmp_addr: ":1935"
 # read_timeout: 10
 # write_timeout: 10
@@ -23,3 +23,7 @@ server:
   hls: true
   api: true
   flv: true
+  #static_push: "rtmp://203.116.214.157:1935/live"
+rtmp_relay_addr: 
+  - "203.116.214.157"
+  - "203.116.214.158"

@@ -25,12 +25,13 @@ import (
 */
 
 type Application struct {
-	Appname    string   `mapstructure:"appname"`
-	Live       bool     `mapstructure:"live"`
-	Hls        bool     `mapstructure:"hls"`
-	Flv        bool     `mapstructure:"flv"`
-	Api        bool     `mapstructure:"api"`
-	StaticPush []string `mapstructure:"static_push"`
+	Appname       string   `mapstructure:"appname"`
+	Live          bool     `mapstructure:"live"`
+	Hls           bool     `mapstructure:"hls"`
+	Flv           bool     `mapstructure:"flv"`
+	Api           bool     `mapstructure:"api"`
+	StaticPush    []string `mapstructure:"static_push"`
+	RtmpRelayAddr []string `mapstructure:"rtmp_relay_addr"`
 }
 
 type Applications []Application
@@ -62,8 +63,8 @@ type ServerCfg struct {
 // default config
 var defaultConf = ServerCfg{
 	ConfigFile:      "livego.yaml",
-	FLVArchive:	false,
-	RTMPNoAuth:	false,
+	FLVArchive:      false,
+	RTMPNoAuth:      false,
 	RTMPAddr:        ":1935",
 	HTTPFLVAddr:     ":7001",
 	HLSAddr:         ":7002",
@@ -73,12 +74,13 @@ var defaultConf = ServerCfg{
 	ReadTimeout:     10,
 	GopNum:          1,
 	Server: Applications{{
-		Appname:    "live",
-		Live:       true,
-		Hls:        true,
-		Flv:        true,
-		Api:        true,
-		StaticPush: nil,
+		Appname:       "live",
+		Live:          true,
+		Hls:           true,
+		Flv:           true,
+		Api:           true,
+		StaticPush:    nil,
+		RtmpRelayAddr: nil,
 	}},
 }
 

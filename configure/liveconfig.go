@@ -18,7 +18,6 @@ import (
       "appname": "live",
       "live": true,
 	  "hls": true,
-	  "static_push": []
     }
   ]
 }
@@ -30,7 +29,6 @@ type Application struct {
 	Hls           bool     `mapstructure:"hls"`
 	Flv           bool     `mapstructure:"flv"`
 	Api           bool     `mapstructure:"api"`
-	StaticPush    []string `mapstructure:"static_push"`
 	RtmpRelayAddr []string `mapstructure:"rtmp_relay_addr"`
 }
 
@@ -79,7 +77,6 @@ var defaultConf = ServerCfg{
 		Hls:           true,
 		Flv:           true,
 		Api:           true,
-		StaticPush:    nil,
 		RtmpRelayAddr: nil,
 	}},
 }
@@ -153,19 +150,4 @@ func CheckAppName(appname string) bool {
 		}
 	}
 	return false
-}
-
-func GetStaticPushUrlList(appname string) ([]string, bool) {
-	apps := Applications{}
-	Config.UnmarshalKey("server", &apps)
-	for _, app := range apps {
-		if (app.Appname == appname) && app.Live {
-			if len(app.StaticPush) > 0 {
-				return app.StaticPush, true
-			} else {
-				return nil, false
-			}
-		}
-	}
-	return nil, false
 }

@@ -165,7 +165,7 @@ func (s *Server) handleConn(conn *core.Conn) error {
 			url := "rtmp://" + string(addr) + "/" + appname + "/" + channel
 			go func(url string) {
 				if err := rtmpRelayClient.Dial(url, av.PUBLISH); err != nil {
-					log.Error("rtmpRelayClient.Dial error=%v, url=%v", err, url)
+					log.Errorf("rtmpRelayClient.Dial error=%v, url=%v", err, url)
 					return
 				}
 				log.Infof("Start rtmp relay sucuess, url=%v", url)

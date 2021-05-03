@@ -141,9 +141,12 @@ func (s *Stream) AddReader(r av.ReadCloser) {
 }
 
 func (s *Stream) AddWriter(w av.WriteCloser) {
-	info := w.Info()
-	pw := &PackWriterCloser{w: w}
-	s.ws.Store(info.UID, pw)
+	s.ws.Store(w.Info().UID, &PackWriterCloser{w: w})
+}
+
+func (s *Stream) DelWriter(w av.WriteCloser, e error) {
+	w.Close(e)
+	s.ws.Delete(w.Info().UID)
 }
 
 func (s *Stream) TransStart() {
@@ -172,7 +175,7 @@ func (s *Stream) TransStart() {
 				//log.Debugf("cache.send: %v", v.w.Info())
 				if err = s.cache.Send(v.w); err != nil {
 					log.Debugf("[%s] send cache packet error: %v, remove", v.w.Info(), err)
-					s.ws.Delete(key)
+					s.DelWriter(v.w, err)
 					return true
 				}
 				v.init = true
@@ -182,7 +185,7 @@ func (s *Stream) TransStart() {
 				//log.Debugf("w.Write: type=%v, %v", writeType, v.w.Info())
 				if err = v.w.Write(&newPacket); err != nil {
 					log.Debugf("[%s] write packet error: %v, remove", v.w.Info(), err)
-					s.ws.Delete(key)
+					s.DelWriter(v.w, err)
 				}
 			}
 			return true
@@ -215,8 +218,7 @@ func (s *Stream) CheckAlive() (n int) {
 			//Alive from RWBaser, check last frame now - timestamp, if > timeout then Remove it
 			if !v.w.Alive() {
 				log.Infof("write timeout remove")
-				s.ws.Delete(key)
-				v.w.Close(fmt.Errorf("write timeout"))
+				s.DelWriter(v.w, fmt.Errorf("write timeout"))
 				return true
 			}
 			n++
@@ -235,11 +237,8 @@ func (s *Stream) closeInter() {
 	s.ws.Range(func(key, val interface{}) bool {
 		v := val.(*PackWriterCloser)
 		if v.w != nil {
-			v.w.Close(fmt.Errorf("closed"))
-			if v.w.Info().IsInterval() {
-				s.ws.Delete(key)
-				log.Debugf("[%v] player closed and remove\n", v.w.Info())
-			}
+			s.DelWriter(v.w, fmt.Errorf("closed"))
+			log.Debugf("[%v] player closed and remove\n", v.w.Info())
 		}
 		return true
 	})

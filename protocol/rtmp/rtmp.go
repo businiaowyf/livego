@@ -366,17 +366,16 @@ func (v *VirWriter) Info() (ret av.Info) {
 		log.Warning(err)
 	}
 	ret.Key = strings.TrimLeft(_url.Path, "/")
-	ret.Inter = true
 	return
 }
 
 func (v *VirWriter) Close(err error) {
-	log.Warning("player ", v.Info(), "closed: "+err.Error())
 	if !v.closed {
+		log.Warning("player ", v.Info(), "closed: "+err.Error())
 		close(v.packetQueue)
+		v.closed = true
+		v.conn.Close(err)
 	}
-	v.closed = true
-	v.conn.Close(err)
 }
 
 type VirReader struct {

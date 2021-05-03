@@ -183,6 +183,5 @@ func (flvWriter *FLVWriter) Info() (ret av.Info) {
 	ret.UID = flvWriter.Uid
 	ret.URL = flvWriter.url
 	ret.Key = flvWriter.app + "/" + flvWriter.title
-	ret.Inter = true
 	return
 }

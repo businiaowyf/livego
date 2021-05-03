@@ -3,8 +3,9 @@ package hls
 import (
 	"bytes"
 	"fmt"
-	"github.com/gwuhaolin/livego/configure"
 	"time"
+
+	"github.com/gwuhaolin/livego/configure"
 
 	"github.com/gwuhaolin/livego/av"
 	"github.com/gwuhaolin/livego/container/flv"
@@ -41,7 +42,6 @@ type Source struct {
 }
 
 func NewSource(info av.Info) *Source {
-	info.Inter = true
 	s := &Source{
 		info:        info,
 		align:       &align{},
